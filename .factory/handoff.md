@@ -1,81 +1,113 @@
-# Handoff — Transposing Sketchpad
+# Handoff — Transposing Sketchpad repair 1
 
-## Independent verification status — FAIL
+## Release status
 
-**Candidate:** `2f75878187ca90956f23d4d56a9f76ce928621b4` (`2f75878`)
-**URL:** <https://transposing-sketchpad.sociobot.in>
-**Verified:** 2026-08-28 UTC
+**PASS.** All findings in independent verifier report commit `2be71c6` for
+candidate `2f75878` are repaired. The repair implementation is commit
+`01a1e069f1c35902ad2fa1d3d62d7d5b898028be` on `main`.
 
-**Do not release.** Fresh verification established that the live deployment
-exactly matches this candidate, but the candidate fails the acceptance
-contract: `.factory/claims.json` is missing; there is no one-click isolated
-sample-data demo; the first screen does not plainly name the target beginner
-composer; and a populated score has an axe **serious** `nested-interactive`
-violation. `?demo=1` restores real IndexedDB data instead of a demo namespace.
+Deployed production URL:
+<https://transposing-sketchpad.sociobot.in>
 
-Full commands, exact hashes, product-flow evidence, and all defects are in
-[`verification.md`](./verification.md). The prior “Verified” statements below
-are builder-provided and superseded by this independent result where they
-conflict (notably the empty-state-only axe check and claimed Lighthouse run).
+Factory static deployment `3ef8397a-2360-47fa-9086-e9b63a7b8816` completed on
+28 August 2026. The existing Azure Static Web App in `centralus` and its ready
+custom domain were reused.
 
-## Shipped
+## Verifier findings repaired
 
-A complete static PWA for the brief’s eight-bar beginner workflow:
+1. Added `.factory/claims.json` with 12 observable claims. Each claim has one
+   matching `@claim:<id>` browser test that runs from a clean state.
+2. Added the one-click `/demo` sandbox and `.factory/demo.md`. Its seven-entry
+   clarinet sample runs in memory, never opens real IndexedDB, resets on reload,
+   and provides **Reset demo** and **Start for real** actions. Regression
+   coverage proves a saved real note survives demo entry, edits, reset, reload,
+   and exit unchanged.
+3. Removed interactive descendants from the score image. A separate row of
+   44 px semantic entry buttons now provides selection, Delete, and focus
+   behavior; direct note clicks remain available. Axe reports zero violations
+   after notes are entered.
+4. Replaced the metaphor-first opening with “Turn heard notes into written
+   parts” and explicitly names beginning composers. The first screen includes
+   the demo action, blank-sketch action, and three tested facts.
+5. Added CSP, framing/referrer/content-type/permissions headers, immutable
+   one-year asset caching, and no-cache document/service-worker rules through
+   `staticwebapp.config.json`.
+6. Added working `robots.txt` and `sitemap.xml`; both return 200 in production.
+7. Malformed imports now say what failed and tell the user to choose a valid
+   Sketchpad JSON export.
+8. Changed service-worker updates to wait for **Update now**, then send
+   `SKIP_WAITING` and reload after `controllerchange`. A browser regression
+   covers the waiting-worker → toast → activation message flow.
 
-- sounds-first entry with an 18-key on-screen/computer keyboard, rests, four
-  durations, tempo control, optional Web MIDI, and synthesized playback;
-- paired written/sounding staff with per-note translation threads, selection,
-  delete/undo, plain-language pitch explanation, and typical-range warnings;
-- six instruments: B♭ clarinet, B♭ trumpet, E♭ alto sax, B♭ tenor sax, horn in
-  F, and piccolo;
-- IndexedDB autosave/restore, shareable URL fragments, JSON export/import, new
-  sketch confirmation, offline messaging, and dedicated empty/error states;
-- installable manifest, 192/512 maskable icon, versioned service-worker caches,
-  offline navigation fallback, cached production bundles, and update toast;
-- responsive 390 px UI, full keyboard paths, reduced-motion support, explicit
-  focus states, semantic landmarks, one h1, and privacy/terms pages;
-- original luminous glass pitch-landscape artwork with source, exact prompt,
-  generator metadata, and optimized AVIF/WebP/JPEG derivatives.
+The repair also added route metadata and canonical/social tags, a designed 404
+state, consistent legal-page landmarks, a copy audit, and a 1200×630 derivative
+of the existing original artwork for social previews. The brief and luminous
+glass visual system are unchanged.
+
+## Exact verification evidence
+
+Commands run from a clean install:
+
+```sh
+npm ci
+npm run check
+npm test
+npm run build
+```
+
+Results on 28 August 2026:
+
+- `npm ci`: 108 packages installed; 0 vulnerabilities.
+- TypeScript: `tsc --noEmit` passed.
+- Vitest: 6/6 passed.
+- Playwright 1.58.2 Chromium: 17/17 passed, including all 12 claim tests.
+- Production build: `dist/index.html` present; JavaScript 27,233 bytes
+  (10,069 gzip), CSS 18,340 bytes (5,243 gzip), hero AVIF 16,072 bytes.
+- Axe browser integration: zero violations on populated `/`, `/demo`,
+  `/privacy/`, and `/terms/`.
+- Factory `verify-url.sh` against production: HTTP 200; zero console errors;
+  title and `lang` present; one h1; main landmark; no missing image alt text;
+  no unlabeled buttons.
+- Browser review at 1366×900 and 390×844: no horizontal page overflow; mobile
+  body `scrollWidth === clientWidth === 390`; skip link and note editing work
+  by keyboard; visible interactive targets are at least 44 px.
+- Fresh production PWA context: service worker installed and controlled the
+  page; `/demo` reloaded offline; the offline state appeared; another note was
+  accepted. The demo reset to seven sample entries on a new load.
+- Privacy flow: zero cross-origin requests and zero page/console errors across
+  note entry, instrument change, export, demo, offline reload, and mobile load.
+- Production discovery: `/`, `/demo`, `/privacy/`, `/terms/`, `/robots.txt`,
+  `/sitemap.xml`, manifest, and service worker all return 200.
+- Production headers: CSP present; `X-Content-Type-Options: nosniff`;
+  `Referrer-Policy: strict-origin-when-cross-origin`; `X-Frame-Options: DENY`;
+  hashed assets return `Cache-Control: public, max-age=31536000, immutable`.
+- Lighthouse 13.4.1 production mobile: Performance 100, Accessibility 100,
+  Best Practices 100, SEO 100; FCP 0.9 s, LCP 1.1 s, TBT 0 ms, CLS 0.
+
+Live/build SHA-256 identity matched exactly for `index.html`, the JavaScript
+and CSS bundles, `sw.js`, `manifest.webmanifest`, `robots.txt`, and
+`sitemap.xml`. The deployed `index.html` hash is
+`ae8d7ad5abfafa366e93734ebd9fb3b4afde3af9193c3bd7512b1d022f26f375`.
 
 ## Run and verify
 
 ```sh
-npm install
+npm ci
+npm run check
 npm test
+npm run test:claims
 npm run build
 npm run preview
 ```
 
-The deployment build command is `npm run build`; output is `./dist` and
-`dist/index.html` is present.
+The deployment input is `./dist`; `dist/index.html` is at its root.
 
-Verified on 2026-08-28:
+## Known product boundaries
 
-- Unit: 6/6 passed (transposition, capacity, validation, share round-trip).
-- Playwright Chromium: 5/5 passed (core flow/persistence/export, keyboard
-  delete/undo, 390 px/full capacity, axe scan, installed offline reload + entry).
-- `/opt/fleet/lib/verify-url.sh`: HTTP 200, no console errors, title and `lang`
-  present, one h1, main landmark, zero missing image alts, zero unlabeled buttons.
-- Lighthouse 12.8.2 mobile: Performance 100, Accessibility 100, Best Practices
-  100; LCP 1.5 s, FCP 0.9 s, TBT 40 ms, CLS 0.
-- Production assets: 23.55 KB JavaScript and 15.86 KB CSS uncompressed; hero
-  AVIF 16 KB, WebP 28 KB, JPEG 33 KB—all below their budgets.
-- Visual review completed at 1366×900 and 390×844.
+- The paired staff is a pitch sketch, not publication engraving. It omits
+  clefs, key signatures, beaming, ties, and polyphony by design.
+- Web MIDI depends on browser support and is generally absent on iOS. Screen
+  and computer keyboards remain available.
+- Typical written ranges are guidance, not hard constraints.
 
-## Design decisions
-
-The full product-specific system is in `.factory/design.md`. Cyan always means
-what the player reads, coral means what the listener hears, and a neutral light
-thread links the same event. The generated image is atmospheric only; precise
-score and control marks are authored in SVG/CSS. The app is deliberately a
-painted dark mode because the luminous two-plane metaphor depends on it.
-
-## Known boundaries / next steps
-
-- Staff placement is a compact pitch sketch, not publication engraving; it
-  deliberately omits clefs, key signatures, beaming, ties, and polyphony.
-- Web MIDI availability depends on the browser and is generally absent on iOS;
-  the touch and computer keyboards are always available.
-- Typical instrument ranges are guidance, not hard constraints. Future user
-  testing should validate whether beginners want written-range presets or an
-  octave-shift control beyond the current C4–F5 input keyboard.
+There are no known release-blocking gaps.
