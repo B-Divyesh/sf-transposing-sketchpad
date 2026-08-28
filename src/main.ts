@@ -313,6 +313,7 @@ async function initialize(): Promise<void> {
     const local = await loadSketch();
     const requestsNewSketch = new URLSearchParams(window.location.search).has('new');
     sketch = requestsNewSketch ? blankSketch() : shared ?? (local ? normalizeSketch(local) : blankSketch());
+    if (requestsNewSketch) history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
     selectedId = sketch.notes.at(-1)?.id;
     status = requestsNewSketch ? 'Blank sketch ready. Saved locally after your first note.' : shared ? 'Opened a shared sketch. A local copy will be saved as you edit.' : local ? 'Restored your sketch from this device.' : 'Blank sketch ready. Saved locally after your first note.';
   } catch (error) {
