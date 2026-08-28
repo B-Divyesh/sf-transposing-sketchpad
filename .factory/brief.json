@@ -1,0 +1,9 @@
+{
+  "slug": "transposing-sketchpad",
+  "title": "Transposing Sketchpad",
+  "artifact_class": "pwa-offline",
+  "user": "Beginning composers writing for transposing instruments who need to hear and enter the sounding pitch without repeatedly doing notation arithmetic.",
+  "smallest_useful_product": "Offline PWA with a two-staff written/sounding view, six common transposing instruments, keyboard/MIDI entry, instant playback, and a shareable eight-bar sketch.",
+  "monetization": "free",
+  "constraints": "Web MIDI is optional; audio and files stay local; synthesized sounds only; clear instrument-range warnings."
+}
