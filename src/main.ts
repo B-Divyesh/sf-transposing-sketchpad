@@ -329,12 +329,14 @@ window.addEventListener('online', () => { online = true; status = 'Back online. 
 window.addEventListener('offline', () => { online = false; status = 'Offline. Your sketch still works and saves locally.'; render(); });
 
 if ('serviceWorker' in navigator) {
+  let hadServiceWorker = navigator.serviceWorker.controller !== null;
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js').catch(() => setStatus('Offline installation is unavailable, but the sketchpad still works in this tab.'));
   });
   navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data?.type === 'UPDATE_AVAILABLE') document.querySelector<HTMLElement>('#update-toast')?.removeAttribute('hidden');
+    if (event.data?.type === 'UPDATE_AVAILABLE' && hadServiceWorker) document.querySelector<HTMLElement>('#update-toast')?.removeAttribute('hidden');
   });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { hadServiceWorker = true; });
 }
 
 void initialize();
