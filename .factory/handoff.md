@@ -1,5 +1,23 @@
 # Handoff — Transposing Sketchpad
 
+## Independent verification status — FAIL
+
+**Candidate:** `2f75878187ca90956f23d4d56a9f76ce928621b4` (`2f75878`)
+**URL:** <https://transposing-sketchpad.sociobot.in>
+**Verified:** 2026-08-28 UTC
+
+**Do not release.** Fresh verification established that the live deployment
+exactly matches this candidate, but the candidate fails the acceptance
+contract: `.factory/claims.json` is missing; there is no one-click isolated
+sample-data demo; the first screen does not plainly name the target beginner
+composer; and a populated score has an axe **serious** `nested-interactive`
+violation. `?demo=1` restores real IndexedDB data instead of a demo namespace.
+
+Full commands, exact hashes, product-flow evidence, and all defects are in
+[`verification.md`](./verification.md). The prior “Verified” statements below
+are builder-provided and superseded by this independent result where they
+conflict (notably the empty-state-only axe check and claimed Lighthouse run).
+
 ## Shipped
 
 A complete static PWA for the brief’s eight-bar beginner workflow:
