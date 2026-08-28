@@ -3,7 +3,7 @@
   "name": "Transposing Sketchpad",
   "short_name": "Pitch Sketch",
   "description": "An offline, instrument-aware melody sketchpad for learning written and sounding pitch.",
-  "start_url": "/?v=1",
+  "start_url": "/?v=2",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

@@ -54,6 +54,26 @@ export function blankSketch(): Sketch {
   };
 }
 
+export function sampleSketch(): Sketch {
+  return {
+    version: 1,
+    title: 'Clarinet warm-up: morning phrase',
+    instrumentId: 'clarinet-bb',
+    tempo: 88,
+    duration: 1,
+    notes: [
+      { id: 'demo-c4', soundingMidi: 60, duration: 1 },
+      { id: 'demo-d4', soundingMidi: 62, duration: 1 },
+      { id: 'demo-e4', soundingMidi: 64, duration: 1 },
+      { id: 'demo-rest', soundingMidi: null, duration: 1 },
+      { id: 'demo-g4', soundingMidi: 67, duration: 2 },
+      { id: 'demo-e4-return', soundingMidi: 64, duration: 1 },
+      { id: 'demo-c4-return', soundingMidi: 60, duration: 1 },
+    ],
+    updatedAt: '2026-08-28T00:00:00.000Z',
+  };
+}
+
 export function normalizeSketch(value: unknown): Sketch {
   if (!value || typeof value !== 'object') throw new Error('This file does not contain a sketch.');
   const raw = value as Partial<Sketch>;

@@ -1,4 +1,4 @@
-const VERSION = 'ts-v3';
+const VERSION = 'ts-v4';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/assets/pitch-landscape.avif', '/assets/pitch-landscape.webp', '/assets/pitch-landscape.jpg'];
@@ -14,7 +14,7 @@ self.addEventListener('install', (event) => {
   }).then(async () => {
     const clients = await self.clients.matchAll({ includeUncontrolled: true });
     clients.forEach((client) => client.postMessage({ type: 'UPDATE_AVAILABLE' }));
-    await self.skipWaiting();
+    if (!self.registration.active) await self.skipWaiting();
   }));
 });
 

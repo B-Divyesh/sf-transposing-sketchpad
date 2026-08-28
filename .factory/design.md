@@ -106,5 +106,6 @@ decorative; the adjacent prose carries its meaning.
 
 Generated with the Param Factory `factory-image` deployment on 2026-08-28.
 The generated output is original to this product. Source PNG and exact prompt
-sidecar are retained under `assets/src/`; the shipped derivative is WebP.
-
+sidecar are retained under `assets/src/`. The app ships optimized AVIF, WebP,
+and JPEG derivatives. `social-preview.jpg` is a 1200×630 center crop of the
+same original artwork for link previews; it introduces no new generated art.

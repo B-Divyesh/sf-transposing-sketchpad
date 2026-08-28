@@ -1,12 +1,15 @@
 import './styles.css';
 import { playSequence, soundNote } from './audio';
-import { blankSketch, beatsUsed, canAdd, instruments, isInRange, normalizeSketch, pitchName, transposeSentence, writtenMidi } from './music';
+import { blankSketch, beatsUsed, canAdd, instruments, isInRange, normalizeSketch, pitchName, sampleSketch, transposeSentence, writtenMidi } from './music';
 import { renderScore } from './score';
 import { decodeSketch, shareUrl } from './share';
 import { loadSketch, saveSketch } from './storage';
 import type { Duration, Sketch, SketchNote } from './types';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
+const initialUrl = new URL(window.location.href);
+const demoMode = initialUrl.pathname === '/demo' || initialUrl.searchParams.has('demo');
+const knownRoute = initialUrl.pathname === '/' || initialUrl.pathname === '/demo' || initialUrl.pathname === '/index.html';
 let sketch = blankSketch();
 let selectedId: string | undefined;
 let playingIndex = -1;
@@ -38,6 +41,7 @@ function setStatus(message: string): void {
 
 function queueSave(): void {
   sketch.updatedAt = new Date().toISOString();
+  if (demoMode) return;
   clearTimeout(saveTimer);
   saveTimer = window.setTimeout(async () => {
     try {
@@ -109,6 +113,17 @@ function keyboardMarkup(): string {
   return KEYBOARD.map(([key, midi]) => `<button class="piano-key ${black.has(midi % 12) ? 'piano-key--black' : 'piano-key--white'}" type="button" data-midi="${midi}" aria-label="Play sounding ${pitchName(midi)}, keyboard key ${key}"><span>${pitchName(midi)}</span><kbd>${key}</kbd></button>`).join('');
 }
 
+function scoreEntryButtons(): string {
+  if (!sketch.notes.length) return '';
+  const inst = instrument();
+  return `<div class="entry-selector" aria-label="Select a score entry">${sketch.notes.map((note, index) => {
+    const label = note.soundingMidi === null
+      ? `Select entry ${index + 1}, rest, ${note.duration} beats`
+      : `Select entry ${index + 1}, ${pitchName(writtenMidi(note.soundingMidi, inst))} written, ${pitchName(note.soundingMidi)} sounding, ${note.duration} beats`;
+    return `<button type="button" data-note-id="${note.id.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}" aria-label="${label}" aria-pressed="${note.id === selectedId}">${index + 1}</button>`;
+  }).join('')}</div>`;
+}
+
 function render(): void {
   const inst = instrument();
   const used = beatsUsed(sketch.notes);
@@ -118,15 +133,18 @@ function render(): void {
   app.innerHTML = `
     <header class="site-header">
       <a class="wordmark" href="/" aria-label="Transposing Sketchpad home"><span class="wordmark-mark" aria-hidden="true">↕</span><span>TS / 08</span></a>
-      <div class="connection-state"><span class="connection-dot ${online ? '' : 'is-offline'}"></span>${online ? 'Local-first' : 'Offline · still working'}</div>
+      <nav class="site-nav" aria-label="Main navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a></nav>
+      <div class="connection-state"><span class="connection-dot ${online ? '' : 'is-offline'}"></span>${online ? 'On-device' : 'Offline · still working'}</div>
     </header>
+    ${demoMode ? `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved</strong><span>Change any note without touching your real sketch.</span><div><button id="reset-demo" class="button button--quiet" type="button">Reset demo</button><a class="button button--secondary" href="/?new=1">Start for real</a></div></aside>` : ''}
     <main id="main">
-      <section class="masthead" aria-labelledby="page-title">
+      ${demoMode ? '' : `<section class="masthead" aria-labelledby="page-title">
         <div class="masthead-copy">
-          <p class="kicker">An instrument-aware melody notebook</p>
-          <h1 id="page-title">Write what they read.<br><em>Hear what sounds.</em></h1>
-          <p class="lede">Sketch up to eight bars in concert pitch. The paired staff handles the transposition while you learn it by ear.</p>
-          <a class="text-link" href="#workbench">Open the sketchpad <span aria-hidden="true">↓</span></a>
+          <p class="kicker">A sounds-first melody notebook</p>
+          <h1 id="page-title">Turn heard notes into written parts</h1>
+          <p class="lede">For beginning composers: enter the pitch you want to hear, then see what the instrument player reads.</p>
+          <div class="hero-actions"><a class="button button--primary" href="/demo">Try it with sample data</a><a class="text-link" href="/?new=1#workbench">Start a blank sketch <span aria-hidden="true">↓</span></a></div>
+          <ul class="hero-facts"><li>Free to use.</li><li>Works offline after the first visit.</li><li>Sketches and audio stay on this device.</li></ul>
         </div>
         <figure class="hero-art">
           <picture>
@@ -136,11 +154,11 @@ function render(): void {
           </picture>
           <figcaption>Two pitch planes, one musical idea.</figcaption>
         </figure>
-      </section>
+      </section>`}
 
       <section id="workbench" class="workbench" aria-labelledby="workbench-title">
         <div class="workbench-heading">
-          <div><p class="kicker">Eight bars · 4/4 · sounds-first entry</p><h2 id="workbench-title">Your transposition desk</h2></div>
+          <div><p class="kicker">Eight bars · 4/4 · sounds-first entry</p>${demoMode ? '<h1 id="workbench-title">Try a clarinet phrase</h1>' : '<h2 id="workbench-title">Your transposition desk</h2>'}</div>
           <div class="save-state" id="status" aria-live="polite">${status}</div>
         </div>
         ${loadError ? `<div class="notice notice--error" role="alert"><strong>Your saved sketch could not be opened.</strong> ${loadError} A fresh sketch is ready; import a previous JSON export if you have one.</div>` : ''}
@@ -148,7 +166,7 @@ function render(): void {
 
         <div class="control-rail" aria-label="Sketch settings">
           <label class="field"><span>Instrument</span><select id="instrument">${instruments.map((item) => `<option value="${item.id}" ${item.id === inst.id ? 'selected' : ''}>${item.name}</option>`).join('')}</select></label>
-          <div class="instrument-fact"><span class="fact-dot" style="--instrument-color:${inst.color}"></span><span><strong>${inst.name}</strong><small>${inst.soundingShift === 12 ? 'sounds one octave higher' : `sounds ${Math.abs(inst.soundingShift)} semitones lower`} than written</small></span></div>
+          <div class="instrument-fact"><span class="fact-dot fact-dot--${inst.id}"></span><span><strong>${inst.name}</strong><small>${inst.soundingShift === 12 ? 'sounds one octave higher' : `sounds ${Math.abs(inst.soundingShift)} semitones lower`} than written</small></span></div>
           <fieldset class="duration-field"><legend>Note length</legend><div class="segmented">${([0.5, 1, 2, 4] as Duration[]).map((duration) => `<button type="button" data-duration="${duration}" aria-pressed="${sketch.duration === duration}" title="${duration} beats">${duration === 0.5 ? '⅛' : duration === 1 ? '♩' : duration === 2 ? '𝅗𝅥' : '𝅝'}<span>${duration}</span></button>`).join('')}</div></fieldset>
           <label class="field field--tempo"><span>Tempo <output id="tempo-output">${sketch.tempo} BPM</output></span><input id="tempo" type="range" min="40" max="220" value="${sketch.tempo}" /></label>
           <button id="midi-button" class="button button--quiet" type="button">Connect MIDI</button>
@@ -162,6 +180,7 @@ function render(): void {
         <div class="score-shell ${sketch.notes.length ? '' : 'is-empty'}">
           <div class="legend" aria-label="Score legend"><span><i class="legend-written"></i>Written pitch</span><span><i class="legend-sounding"></i>Sounding pitch</span><span><i class="legend-thread"></i>Same musical moment</span></div>
           <div class="score-scroll">${renderScore(sketch, inst, selectedId, playingIndex)}</div>
+          ${scoreEntryButtons()}
           ${sketch.notes.length === 0 ? `<div class="empty-score"><strong>Your first note makes the bridge visible.</strong><span>Try sounding C4 with the A key.</span></div>` : ''}
         </div>
 
@@ -173,18 +192,18 @@ function render(): void {
         </div>
 
         <section class="translation" aria-labelledby="translation-title">
-          <div><p class="kicker">Live translation</p><h3 id="translation-title">What the player sees</h3></div>
+          <div><p class="kicker">Live translation</p>${demoMode ? '<h2 class="section-title" id="translation-title">What the player sees</h2>' : '<h3 id="translation-title">What the player sees</h3>'}</div>
           <div id="translation-detail">${translationPanel()}</div>
         </section>
 
         <section class="input-deck" aria-labelledby="input-title">
-          <div class="input-heading"><div><p class="kicker">Concert-pitch input</p><h3 id="input-title">Play what you want to hear</h3></div><button id="add-rest" class="button button--quiet" type="button" ${remaining < sketch.duration ? 'disabled' : ''}>Add rest</button></div>
+          <div class="input-heading"><div><p class="kicker">Concert-pitch input</p>${demoMode ? '<h2 class="section-title" id="input-title">Play what you want to hear</h2>' : '<h3 id="input-title">Play what you want to hear</h3>'}</div><button id="add-rest" class="button button--quiet" type="button" ${remaining < sketch.duration ? 'disabled' : ''}>Add rest</button></div>
           <div class="piano" aria-label="Sounding pitch keyboard">${keyboardMarkup()}</div>
           <p class="keyboard-help">Computer keys A–' play C4–F5. MIDI input also enters sounding pitch. Audio begins only after you play.</p>
         </section>
 
         <section class="ownership" aria-labelledby="ownership-title">
-          <div><p class="kicker">Local by design</p><h3 id="ownership-title">Your sketch stays yours</h3><p>Saved in this browser. No account, upload, tracking, or sample library.</p></div>
+          <div><p class="kicker">Local by design</p>${demoMode ? '<h2 class="section-title" id="ownership-title">Your sketch stays yours</h2>' : '<h3 id="ownership-title">Your sketch stays yours</h3>'}<p>${demoMode ? 'Demo changes stay in memory and are discarded when you leave.' : 'Saved in this browser. No account, upload, tracking, or sample library.'}</p></div>
           <div class="ownership-actions">
             <button id="share" class="button button--secondary" type="button">Copy share link</button>
             <button id="export" class="button button--quiet" type="button">Export JSON</button>
@@ -194,9 +213,9 @@ function render(): void {
         </section>
       </section>
     </main>
-    <footer><p>Made for curious ears. Synthesized locally; no sound leaves your device.</p><nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav><p class="generated-note">Atmospheric artwork generated for this product.</p></footer>
+    <footer><p>For beginning composers. Audio is synthesized on this device.</p><nav aria-label="Legal"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav><p class="generated-note">Built by Param Factory · v1.1 · Atmospheric artwork generated for this product.</p></footer>
     <dialog id="clear-dialog"><form method="dialog"><p class="kicker">Start over</p><h2>Clear all eight bars?</h2><p>This replaces the current local sketch. Export it first if you want a copy.</p><div class="dialog-actions"><button class="button button--quiet" value="cancel">Keep sketch</button><button class="button button--danger" id="confirm-clear" value="confirm">Clear sketch</button></div></form></dialog>
-    <div class="update-toast" id="update-toast" hidden><span>A fresher sketchpad is ready.</span><button type="button" class="button button--secondary" id="reload">Update now</button></div>
+    <div class="update-toast" id="update-toast" role="region" aria-label="Application update" hidden><span>A fresher sketchpad is ready.</span><button type="button" class="button button--secondary" id="reload">Update now</button></div>
   `;
   bindEvents();
 }
@@ -223,10 +242,10 @@ function bindEvents(): void {
   document.querySelector('#add-rest')?.addEventListener('click', () => addEntry(null));
   document.querySelector('#delete-note')?.addEventListener('click', deleteSelected);
   document.querySelector('#undo')?.addEventListener('click', undoDelete);
-  document.querySelectorAll<SVGGElement>('[data-note-id]').forEach((node) => {
-    const select = () => { selectedId = node.dataset.noteId; status = `Selected entry ${sketch.notes.findIndex((note) => note.id === selectedId) + 1}.`; render(); };
+  document.querySelectorAll<HTMLElement>('[data-note-id], [data-score-note-id]').forEach((node) => {
+    const select = () => { selectedId = node.dataset.noteId ?? node.dataset.scoreNoteId; status = `Selected entry ${sketch.notes.findIndex((note) => note.id === selectedId) + 1}.`; render(); };
     node.addEventListener('click', select);
-    node.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } });
+    node.addEventListener('keydown', (event) => { if ((event.key === 'Delete' || event.key === 'Backspace') && node.dataset.noteId) { event.preventDefault(); select(); deleteSelected(); } });
   });
   document.querySelector('#play')?.addEventListener('click', togglePlayback);
   document.querySelector('#share')?.addEventListener('click', copyShareLink);
@@ -237,7 +256,14 @@ function bindEvents(): void {
     playController?.abort(); sketch = blankSketch(); selectedId = undefined; previousNotes = undefined; mutate('Started a new blank sketch.');
   });
   document.querySelector('#midi-button')?.addEventListener('click', connectMidi);
-  document.querySelector('#reload')?.addEventListener('click', () => window.location.reload());
+  document.querySelector('#reset-demo')?.addEventListener('click', () => {
+    playController?.abort();
+    sketch = sampleSketch();
+    selectedId = sketch.notes[0]?.id;
+    previousNotes = undefined;
+    status = 'Demo reset to the original clarinet phrase.';
+    render();
+  });
 }
 
 function togglePlayback(): void {
@@ -252,7 +278,7 @@ function togglePlayback(): void {
 }
 
 async function copyShareLink(): Promise<void> {
-  const url = shareUrl(sketch);
+  const url = shareUrl(sketch, demoMode ? `${window.location.origin}/` : window.location.href);
   try {
     await navigator.clipboard.writeText(url);
     setStatus('Share link copied. It contains this sketch, not a cloud upload.');
@@ -281,8 +307,8 @@ async function importJson(event: Event): Promise<void> {
     selectedId = sketch.notes.at(-1)?.id;
     previousNotes = undefined;
     mutate(`Imported “${sketch.title}”.`);
-  } catch (error) {
-    setStatus(error instanceof Error ? error.message : 'That file could not be imported.');
+  } catch {
+    setStatus('That file could not be imported. Choose a valid Sketchpad JSON export and try again.');
   } finally { input.value = ''; }
 }
 
@@ -307,8 +333,21 @@ function handleComputerKeyboard(event: KeyboardEvent): void {
 }
 
 async function initialize(): Promise<void> {
+  if (!knownRoute) {
+    document.title = 'Page not found — Transposing Sketchpad';
+    app.innerHTML = `<header class="site-header"><a class="wordmark" href="/" aria-label="Transposing Sketchpad home"><span class="wordmark-mark" aria-hidden="true">↕</span><span>TS / 08</span></a></header><main id="main" class="not-found"><p class="kicker">404 · wrong staff</p><h1>That page is not in this sketch</h1><p>The link may be old or mistyped.</p><a class="button button--primary" href="/">Return to the sketchpad</a></main>`;
+    return;
+  }
   render();
   try {
+    if (demoMode) {
+      document.title = 'Demo — Transposing Sketchpad';
+      sketch = sampleSketch();
+      selectedId = sketch.notes[0]?.id;
+      status = 'Sample phrase ready. Demo changes are not saved.';
+      render();
+      return;
+    }
     const shared = window.location.hash.startsWith('#sketch=') ? decodeSketch(window.location.hash.slice(8)) : undefined;
     const local = await loadSketch();
     const requestsNewSketch = new URLSearchParams(window.location.search).has('new');
@@ -329,14 +368,34 @@ window.addEventListener('online', () => { online = true; status = 'Back online. 
 window.addEventListener('offline', () => { online = false; status = 'Offline. Your sketch still works and saves locally.'; render(); });
 
 if ('serviceWorker' in navigator) {
-  let hadServiceWorker = navigator.serviceWorker.controller !== null;
+  let refreshingForUpdate = false;
+  const showUpdate = () => document.querySelector<HTMLElement>('#update-toast')?.removeAttribute('hidden');
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch(() => setStatus('Offline installation is unavailable, but the sketchpad still works in this tab.'));
+    void navigator.serviceWorker.register('/sw.js').then((registration) => {
+      if (registration.waiting && navigator.serviceWorker.controller) showUpdate();
+      registration.addEventListener('updatefound', () => {
+        const worker = registration.installing;
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdate();
+        });
+      });
+    }).catch(() => setStatus('Offline installation is unavailable, but the sketchpad still works in this tab.'));
   });
   navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data?.type === 'UPDATE_AVAILABLE' && hadServiceWorker) document.querySelector<HTMLElement>('#update-toast')?.removeAttribute('hidden');
+    if (event.data?.type === 'UPDATE_AVAILABLE' && navigator.serviceWorker.controller) showUpdate();
   });
-  navigator.serviceWorker.addEventListener('controllerchange', () => { hadServiceWorker = true; });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshingForUpdate) window.location.reload();
+  });
+  window.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('#reload')) return;
+    event.preventDefault();
+    void navigator.serviceWorker.getRegistration().then((registration) => {
+      if (!registration?.waiting) { window.location.reload(); return; }
+      refreshingForUpdate = true;
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    });
+  });
 }
 
 void initialize();

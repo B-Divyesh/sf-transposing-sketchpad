@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://transposing-sketchpad.sociobot.in/sitemap.xml

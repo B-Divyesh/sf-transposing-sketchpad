@@ -1,0 +1,86 @@
+[
+  {
+    "id": "transposition-six",
+    "claim": "Enter concert pitch and see the written pitch for six transposing instruments",
+    "where": "landing page, workbench, README",
+    "test": "npm run test:e2e -- --grep @claim:transposition-six",
+    "sandbox": "blank sketch; enter concert C4; assert the written result for all six instrument choices"
+  },
+  {
+    "id": "demo-isolation",
+    "claim": "Try sample data without reading or changing a real sketch",
+    "where": "landing action, demo banner, README",
+    "test": "npm run test:e2e -- --grep @claim:demo-isolation",
+    "sandbox": "save a real note; enter /demo; mutate and reload; assert sample reset and original real note remains"
+  },
+  {
+    "id": "autosave-local",
+    "claim": "Real sketches save automatically in this browser",
+    "where": "workbench, README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:autosave-local",
+    "sandbox": "fresh real sketch; change instrument and add a note; wait for save; reload and assert restoration"
+  },
+  {
+    "id": "keyboard-midi-input",
+    "claim": "Enter notes with the screen, computer keyboard, or optional Web MIDI",
+    "where": "workbench, README",
+    "test": "npm run test:e2e -- --grep @claim:keyboard-midi-input",
+    "sandbox": "blank sketch with mocked MIDI device; enter one computer-key note and one MIDI note"
+  },
+  {
+    "id": "local-audio",
+    "claim": "Audio is synthesized on this device",
+    "where": "landing facts, footer, README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:local-audio",
+    "sandbox": "demo with instrumented browser AudioContext; enter a note and assert two local oscillators start"
+  },
+  {
+    "id": "json-portability",
+    "claim": "Export and import a sketch as JSON",
+    "where": "workbench, README",
+    "test": "npm run test:e2e -- --grep @claim:json-portability",
+    "sandbox": "demo sample; inspect downloaded JSON; import a changed valid file and assert title and note count"
+  },
+  {
+    "id": "share-fragment",
+    "claim": "Share links keep sketch data in the URL fragment",
+    "where": "workbench, README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:share-fragment",
+    "sandbox": "demo sample; copy link; assert #sketch fragment and reopen all sample notes"
+  },
+  {
+    "id": "privacy-no-outbound",
+    "claim": "Normal sketching sends no data to another origin and uses no tracking",
+    "where": "landing facts, workbench, README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:privacy-no-outbound",
+    "sandbox": "fresh demo; intercept the whole entry, instrument, and export flow; assert no cross-origin requests"
+  },
+  {
+    "id": "offline-reload",
+    "claim": "Works offline after the first visit",
+    "where": "landing facts, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "fresh context; install service worker; set context offline; reload /demo and enter another note"
+  },
+  {
+    "id": "eight-bar-capacity",
+    "claim": "Each sketch holds up to eight 4/4 bars",
+    "where": "workbench, README",
+    "test": "npm run test:e2e -- --grep @claim:eight-bar-capacity",
+    "sandbox": "390px blank sketch; enter exactly 32 quarter notes; assert full capacity and rejected overflow"
+  },
+  {
+    "id": "range-guidance",
+    "claim": "Shows typical instrument-range warnings without blocking the note",
+    "where": "workbench, README, terms page",
+    "test": "npm run test:e2e -- --grep @claim:range-guidance",
+    "sandbox": "blank piccolo sketch; enter concert C4; assert warning and retained note"
+  },
+  {
+    "id": "free-no-account",
+    "claim": "Free to use with no account or payment gate",
+    "where": "landing facts, README, terms page",
+    "test": "npm run test:e2e -- --grep @claim:free-no-account",
+    "sandbox": "fresh landing and terms pages; assert free copy and absence of login or payment controls"
+  }
+]

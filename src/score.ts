@@ -28,14 +28,14 @@ function noteMarkup(note: SketchNote, index: number, beat: number, instrument: I
   const playing = index === playingIndex;
   const classes = ['score-note', selected ? 'is-selected' : '', playing ? 'is-playing' : ''].filter(Boolean).join(' ');
   if (sounding === null) {
-    return `<g class="${classes}" data-note-id="${escape(note.id)}" role="button" tabindex="0" aria-label="Rest, ${note.duration} beats, note ${index + 1}"><rect class="rest-mark" x="${x - 6}" y="88" width="12" height="7" rx="2"/><rect class="rest-mark rest-mark--sound" x="${x - 6}" y="256" width="12" height="7" rx="2"/><text class="note-index" x="${x}" y="332">${index + 1}</text></g>`;
+    return `<g class="${classes}" data-score-note-id="${escape(note.id)}"><rect class="rest-mark" x="${x - 6}" y="88" width="12" height="7" rx="2"/><rect class="rest-mark rest-mark--sound" x="${x - 6}" y="256" width="12" height="7" rx="2"/><text class="note-index" x="${x}" y="332">${index + 1}</text></g>`;
   }
   const written = writtenMidi(sounding, instrument);
   const topY = pitchY(written, 112);
   const bottomY = pitchY(sounding, 280);
   const rangeClass = isInRange(sounding, instrument) ? '' : ' is-out-of-range';
   const label = `${pitchName(written)} written, sounds ${pitchName(sounding)}, ${note.duration} beats, note ${index + 1}${rangeClass ? ', outside typical range' : ''}`;
-  return `<g class="${classes}${rangeClass}" data-note-id="${escape(note.id)}" role="button" tabindex="0" aria-label="${escape(label)}">
+  return `<g class="${classes}${rangeClass}" data-score-note-id="${escape(note.id)}" aria-label="${escape(label)}">
     <line class="pitch-thread" x1="${x}" y1="${topY + 8}" x2="${x}" y2="${bottomY - 8}" />
     <ellipse class="note-head note-head--written" cx="${x}" cy="${topY}" rx="8" ry="5.5" transform="rotate(-15 ${x} ${topY})" />
     <line class="note-stem note-stem--written" x1="${x + 7}" y1="${topY}" x2="${x + 7}" y2="${topY - 29}" />
@@ -56,7 +56,7 @@ export function renderScore(sketch: Sketch, instrument: Instrument, selectedId?:
   const cursorX = LEFT + used * (BAR_WIDTH / BEATS_PER_BAR);
   return `<svg class="score" viewBox="0 0 ${WIDTH} 350" role="img" aria-labelledby="score-title score-description">
     <title id="score-title">Paired written and sounding pitch staff</title>
-    <desc id="score-description">Eight bars in four four time. ${sketch.notes.length ? `${sketch.notes.length} entries use ${used} of 32 beats.` : 'The score is empty.'} Select a note to inspect or delete it.</desc>
+    <desc id="score-description">Eight bars in four four time. ${sketch.notes.length ? `${sketch.notes.length} entries use ${used} of 32 beats. Use the entry buttons below the staff to select a note.` : 'The score is empty.'}</desc>
     <defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
     ${staff(88, 'WRITTEN', 'written')}
     ${staff(256, 'SOUNDS', 'sounding')}
